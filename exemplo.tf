@@ -48,14 +48,21 @@ resource "aws_elastic_beanstalk_environment" "enviroment_teste" {
   solution_stack_name = "64bit Amazon Linux 2 v3.4.3 running Corretto 17"
 
 
-  # Associando instance profile ao Beanstalk
+  # ---------------------------- Definindo Configurações das instancias EC2 utilizada -------------------------------
+  setting {
+    namespace = "aws:autoscaling:launchconfiguration"
+    name      = "InstanceType"
+    value     = "t2.micro"
+  }
+
+  # ---------------------- Associando instance profile ao Beanstalk -------------------------------------
   setting {
     namespace = "aws:autoscaling:launchconfiguration"
     name      = "IamInstanceProfile"
     value     = aws_iam_instance_profile.beanstalk_instance_profile.name
   }
 
-  # Configurando quantidade de min/max de instancias ec2
+  # ---------------------------- Configurando quantidade de min/max de instancias ec2 ------------------------------
   setting {
     namespace = "aws:autoscaling:asg"
     name      = "MinSize"
@@ -68,7 +75,7 @@ resource "aws_elastic_beanstalk_environment" "enviroment_teste" {
     value     = 5
   }
 
-  #   Configurando Trigger para auto scaling
+  #   -------------------- Configurando Trigger para auto scaling -------------------------------------
 
   setting {
     namespace = "aws:autoscaling:trigger"
@@ -113,16 +120,62 @@ resource "aws_elastic_beanstalk_environment" "enviroment_teste" {
     value     = "Percent" // unidade de medida utilizada, valor padrão é Bytes
   }
 
-  # Definindo Configurações das instancias EC2 utilizada
+  #---------------------------- Definindo Configurações de Rolling update, onde é executado o deploy da nova versão em lotes ----------------------
+
   setting {
-    namespace = "aws:autoscaling:launchconfiguration"
-    name      = "InstanceType"
-    value     = "t2.micro"
+    namespace = "aws:autoscaling:updatepolicy:rollingupdate"
+    name      = "RollingUpdateEnabled" // Habilitando o uso do Rolling update, onde o deploy de uma versão nova acontece em lotes, o valor padrão é false
+    value     = true
   }
 
-  tags = {
-    Name        = "aplicacao-teste"
-    Environment = "Development"
+  setting {
+    namespace = "aws:autoscaling:updatepolicy:rollingupdate"
+    name      = "RollingUpdateType" // Definindo estrategia validação de atualização do deploy, o valor padrão é Time
+    value     = "Health"
   }
+
+  setting {
+    namespace = "aws:autoscaling:updatepolicy:rollingupdate"
+    name      = "MaxBatchSize" // Definindo o tamanho do lote que será atualizado, o valor padrão é 1
+    value     = 2
+  }
+
+  setting {
+    namespace = "aws:autoscaling:updatepolicy:rollingupdate"
+    name      = "PauseTime" // Definindo o tempo de pausa antes de iniciar o proximo lote
+    value     = "PT2M"
+  }
+
+
+  #   ----------------------------- Definindo Configurações de Deploy --------------------------------
+
+  setting {
+    namespace = "aws:elasticbeanstalk:command"
+    name      = "DeploymentPolicy" // Definindo politica de deploy, qual estrategia de deploy será utilizada, o valor padrão é AllAtOnce
+    value     = "Rolling"
+  }
+  setting {
+    namespace = "aws:elasticbeanstalk:command"
+    name      = "BatchSizeType" // Definindo o tipo de unidade de medida utilizado para definir o tamanho do lote, o valor padrão é Percentage
+    value     = "Fixed"
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:command"
+    name      = "BatchSize" // Definindo o tamanho o tamanho do lote seguindo o tipo definido, o valor padrão é
+    value     = 2
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:command"
+    name      = "BatchSize" // Definindo o tamanho o tamanho do lote seguindo o tipo definido, o valor padrão é
+    value     = 2
+  }
+
+  //tags só precisam ser definidas durante a criação do ambiente, não sendo necessário definir após a criação o atualização
+  #   tags = {
+  #     Name        = "aplicacao-teste"
+  #     Environment = "Development"
+  #   }
 
 }
