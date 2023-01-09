@@ -16,17 +16,45 @@ data "aws_iam_policy_document" "instance-assume-role-policy" {
   statement {
     actions = ["sts:AssumeRole"]
 
+
     principals {
       type        = "Service"
       identifiers = ["ec2.amazonaws.com"]
     }
   }
+
+}
+
+resource "aws_iam_policy" "dynamodb_policy" {
+  name        = "dynamdb--policy"
+  path        = "/"
+  description = "policy para acesso ao dynamodb"
+
+  # Terraform's "jsonencode" function converts a
+  # Terraform expression result to valid JSON syntax.
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "dynamodb:*",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
 }
 
 resource "aws_iam_role" "instance" {
   name               = "aws--iam-role-teste"
   path               = "/system/"
   assume_role_policy = data.aws_iam_policy_document.instance-assume-role-policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "attach_dynamodb_policy" {
+  role       = aws_iam_role.instance.name
+  policy_arn = aws_iam_policy.dynamodb_policy.arn
 }
 
 # Criando IAM Instance e associando role aws criada
@@ -72,7 +100,7 @@ resource "aws_elastic_beanstalk_environment" "enviroment_teste" {
   setting {
     namespace = "aws:autoscaling:asg"
     name      = "MaxSize"
-    value     = 5
+    value     = 1
   }
 
   #   -------------------- Configurando Trigger para auto scaling -------------------------------------
@@ -137,7 +165,7 @@ resource "aws_elastic_beanstalk_environment" "enviroment_teste" {
   setting {
     namespace = "aws:autoscaling:updatepolicy:rollingupdate"
     name      = "MaxBatchSize" // Definindo o tamanho do lote que será atualizado, o valor padrão é 1
-    value     = 2
+    value     = 1
   }
 
   setting {
@@ -163,14 +191,28 @@ resource "aws_elastic_beanstalk_environment" "enviroment_teste" {
   setting {
     namespace = "aws:elasticbeanstalk:command"
     name      = "BatchSize" // Definindo o tamanho o tamanho do lote seguindo o tipo definido, o valor padrão é
-    value     = 2
+    value     = 1
   }
 
   setting {
-    namespace = "aws:elasticbeanstalk:command"
-    name      = "BatchSize" // Definindo o tamanho o tamanho do lote seguindo o tipo definido, o valor padrão é
-    value     = 2
+    namespace = "aws:elasticbeanstalk:environment"
+    name      = "LoadBalancerType"
+    value     = "application"
   }
+
+  #   -------------------------- Definindo configurações para verificação da saúde e comunicação das instancias -----------------
+  setting {
+    namespace = "aws:elasticbeanstalk:environment:process:default"
+    name      = "Port" // Definindo a porta onde o o ELB acessará das instancias, o valor padrão é 80 (HTTP Default)
+    value     = 5000
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:environment:process:default"
+    name      = "HealthCheckPath" // Definindo a porta onde o o ELB acessará das instancias, o valor padrão é 80 (HTTP Default)
+    value     = "/feature--toggle/actuator/health"
+  }
+
 
   //tags só precisam ser definidas durante a criação do ambiente, não sendo necessário definir após a criação o atualização
   #   tags = {
