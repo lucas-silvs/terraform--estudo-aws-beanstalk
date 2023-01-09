@@ -1,14 +1,14 @@
 # Criando a Aplicacao Beanstalk
 resource "aws_elastic_beanstalk_application" "application_teste" {
-  name        = "application--beanstalk-teste"
+  name        = "application--beanstalk-teste-docker"
   description = "exemplo teste para criação de ambiente Beanstalk utilizando Terraform"
 }
 
 # Criando Ambiente Beanstalk 
 resource "aws_elastic_beanstalk_environment" "enviroment_teste" {
-  name                = "enviroment--beanstalk-teste"
+  name                = "enviroment--beanstalk-teste-docker"
   application         = aws_elastic_beanstalk_application.application_teste.name
-  solution_stack_name = "64bit Amazon Linux 2 v3.4.3 running Corretto 17"
+  solution_stack_name = "64bit Amazon Linux 2 v3.5.3 running Docker"
 
 
   # ---------------------------- Definindo Configurações das instancias EC2 utilizada -------------------------------
@@ -139,7 +139,7 @@ resource "aws_elastic_beanstalk_environment" "enviroment_teste" {
   setting {
     namespace = "aws:elasticbeanstalk:environment:process:default"
     name      = "Port" // Definindo a porta onde o o ELB acessará das instancias, o valor padrão é 80 (HTTP Default)
-    value     = 5000
+    value     = 8080
   }
 
   setting {

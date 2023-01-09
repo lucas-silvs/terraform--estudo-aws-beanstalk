@@ -1,0 +1,14 @@
+{
+  "AWSEBDockerrunVersion": "1",
+  "Image": {
+    "Name": "somnusxiii/ff4j-dynamodb:1.0.0",
+    "Update": "true"
+  },
+
+  "Ports": [
+    {
+      "ContainerPort": 5000,
+      "HostPort": 8080
+    }
+  ]
+}
