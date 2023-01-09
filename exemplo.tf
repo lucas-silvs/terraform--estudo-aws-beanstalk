@@ -46,6 +46,32 @@ resource "aws_iam_policy" "dynamodb_policy" {
   })
 }
 
+resource "aws_iam_policy" "cloudwatch_policy" {
+  name        = "cloudwath--policy"
+  path        = "/"
+  description = "policy para dar permissao ao Beanstalk criar logs"
+
+  # Terraform's "jsonencode" function converts a
+  # Terraform expression result to valid JSON syntax.
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ],
+        Resource = [
+          "arn:aws:logs:*:*:*"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "instance" {
   name               = "aws--iam-role-teste"
   path               = "/system/"
@@ -55,6 +81,11 @@ resource "aws_iam_role" "instance" {
 resource "aws_iam_role_policy_attachment" "attach_dynamodb_policy" {
   role       = aws_iam_role.instance.name
   policy_arn = aws_iam_policy.dynamodb_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "attach_cloudwatch_policy" {
+  role       = aws_iam_role.instance.name
+  policy_arn = aws_iam_policy.cloudwatch_policy.arn
 }
 
 # Criando IAM Instance e associando role aws criada
@@ -211,6 +242,28 @@ resource "aws_elastic_beanstalk_environment" "enviroment_teste" {
     namespace = "aws:elasticbeanstalk:environment:process:default"
     name      = "HealthCheckPath" // Definindo a porta onde o o ELB acessará das instancias, o valor padrão é 80 (HTTP Default)
     value     = "/feature--toggle/actuator/health"
+  }
+
+  #   ---------------------- Definindo variavel de ambiente para execução em mongo ou inmemory -------------------------------------
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "SPRING_PROFILES_ACTIVE" // definindo variavel spring profile active da aplicação exemplo em java
+    value     = "mongo"
+  }
+
+  # --------------------------- Habilitando logs no Cloudwatch -------------------------------
+
+  setting {
+    namespace = "aws:elasticbeanstalk:cloudwatch:logs"
+    name      = "StreamLogs" // definindo variavel spring profile active da aplicação exemplo em java
+    value     = true
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:cloudwatch:logs"
+    name      = "RetentionInDays" // definindo variavel spring profile active da aplicação exemplo em java
+    value     = 1
   }
 
 
