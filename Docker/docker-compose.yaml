@@ -1,5 +1,7 @@
 services:
   ff4j:
-    image: somnusxiii/ff4j-dynamodb:1.0.0
+    image: somnusxiii/ff4j-dynamodb:1.0.1
     ports:
       - "8080:5000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
